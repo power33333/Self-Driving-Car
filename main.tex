@@ -1,0 +1,391 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+
+\title{Mathematical formulation of the obstacle-free problem}
+\author{}
+\date{November 2022}
+
+\begin{document}
+
+\maketitle
+
+\section{Problem formulation}
+Here, we present the single track model of the car.
+
+\paragraph{Notation}
+
+\begin{itemize}
+    \item \(v\): velocity of car
+    \item \(v_f\): velocity of front wheel
+    \item \(v_r\): velocity of rear wheel
+    \item \(\delta\): steering angle
+    \item \(\beta\): side slip angle
+    \item \(\psi\): yaw angle
+    \item \(\alpha_f\): side slip angle at front wheel
+    \item \(alpha_r\): side slip angle at rear wheel
+    \item \(F_sf\): lateral tire force at front wheel
+    \item \(F_sr\): lateral tire force at rear wheel
+    \item \(F_lf\): longitudnal tire force at front wheel
+    \item \(F_lr\): longitudnal tire force at rear wheel
+    \item \(l_f\): distance from centre of gravity to front wheel centre
+    \item \(l_r\): distance from centre of gravity to rear wheel centre
+    \item \(e_{SP}\): distance from centre of gravity to drag mount point 
+    \item \(F_{Ax}\): air resistance in x direction in vehicle frame
+    \item \(F_{Ay}\): air resistance in y direction in vehicle frame
+    \item \(m\): mass of the car
+\end{itemize}
+
+\paragraph{Control variables and constraints}
+\begin{itemize}
+    \item steering angle velocity \( w_{\delta} \leq 0.5 \) 
+    \item braking force \( 0 \leq F_B \leq 15000 \) [N]
+    \item gas pedal position \( \phi \in [0,1]\)
+\end{itemize}
+
+\paragraph{Diagram}
+Draw diagram here
+
+\paragraph{Equations of motion}
+
+Anticlockwise direction is assumed as positive direction of rotation. Therefore angles \(\beta, \alhpha_f, \alpha_r \leq 0 \)
+
+In the world coordinate system, 
+\begin{align}
+    \dot{x} = v cos(\psi - \beta) \\
+    \dot{y} = v sin(\psi - \beta)
+\end{align}
+\\
+
+Balancing forces along the direction of velocity,
+\begin{align}
+    \dot{v} = \dfrac{1}{m} \bigg[ (F_{lr} - F_{Ax})cos\beta - (F_{sr} - F_{Ay})sin\beta + F_{lf}cos(\delta + \beta) - F_{sf}sin(\delta + \beta)
+    \bigg]
+\end{align}
+\\
+
+Balancing the centrifugal forces on the COG,
+\begin{align}
+    \dot{\beta} = \omega_z - \dfrac{1}{mv}\bigg[ (F_{lr} - F_{Ax})sin\beta + (F_{sr} - F_{Ay})cos\beta + F_{lf}sin(\delta + \beta) + F_{sf}cos(\delta + \beta)
+    \bigg]
+\end{align}
+\\
+
+Yaw rate is the angular velocity around the z-axis on COG,
+\begin{align}
+    \dot{\psi} = \omega_z
+\end{align}
+
+Using conservation of angular momentum on COG,
+\begin{align}
+    \dot{\omega_z} = \dfrac{1}{I_{zz}}\bigg[ F_{sf}.l_f.cos\delta - F_{sr}.l_r - F_{Ay}.e_{SP} + F_{sf}.l_f.sin\delta \bigg]
+\end{align}
+
+Lastly, the steering angle velocity,
+\begin{align}
+    \dot{\delta} = \omega_{\delta}
+\end{align}
+
+\paragraph{Tire models}
+
+We use the non-linear tire model of Pacejka magic formula:
+
+\begin{align}
+    F_{sf}(\alpha_f) = D_f.sin(C_f arctan(B_f\alpha_f - E_f(B_f\alpha_f - arctan(B_f\alpha_f))))\\
+     F_{sr}(\alpha_r) = D_r.sin(C_r arctan(B_r\alpha_r - E_r(B_r\alpha_r - arctan(B_r\alpha_r))))
+\end{align}
+\\
+
+Using the translational velocity component of v on the rear and front wheels, the side slip angles at the front and rear wheels are given by
+
+\begin{align}
+    \alpha_f = \delta - arctan \bigg( \dfrac{l_f. \dot{\psi} - vsin\beta}{vcos\beta} \bigg)\\
+     \alpha_r = arctan \bigg( \dfrac{l_r. \dot{\psi} + vsin\beta}{vcos\beta} \bigg)
+\end{align}
+
+\paragraph{Air drag}
+
+The air drag along the lateral direction of the vehicle is assumed to be zero and along the longitudnal direction it is given by
+\begin{align}
+    F_{Ax} = \dfrac{1}{2} c_{\omega} \rho A v^2\\
+    F_{Ay} = 0
+\end{align}
+
+We assume a front wheel drive and a constant gears.
+The longitudnal tire forces are related to the breaking forces and the rolling resistances at the tires by,
+
+\begin{align}
+    F_{lf} = \dfrac{M_{wheel}(\phi)}{R} - F_{Bf} - F_{Rf}\\
+    F_{lr} = -F_{Br} - F_{Rr}
+\end{align}
+
+The motor torque at the front wheel \(M_wheel\) is given by
+
+\begin{align}
+    M_{wheel}(\phi) = i_g. i_t. f_1(\phi). f_2(\omega_{mot}(\phi)) + (1-f_1(\phi))f_3(\omega_{mot}(\mu))\\
+    \omega_{mot} = \dfrac{v.i_g.i_t}{R}
+\end{align}
+
+The three functions are given by 
+\begin{align}
+    f_1(x) = 1 - exp(-3x)\\
+    f_2(x) = -37.8 + 1.54x-0.0019x^2\\
+    f_3(x) = -34.9 - 0.04775x
+\end{align}
+
+We assume that the breaking force \(F_B\) is distributed as
+
+\begin{align}
+    F_{Bf} = \dfrac{2}{3}F_B, F_{Br} = \dfrac{1}{3}F_B
+\end{align}
+
+The rolling resistance forces are given by,
+
+\begin{align}
+    F_{Rf} = f_R(v).F_{zf}, F_{Rr} = f_R(v).F_{zr}\\
+    f_R(v) = f_{R0} + f_{R1}\dfrac{v}{100} + f_{R4}\bigg(\dfrac{v}{100}\bigg)^4\\
+    F_{zf} = \dfrac{m.l_r.g}{l_f + l_r}\\
+    F_{zr} = \dfrac{m.l_f.g}{l_f + l_r}
+\end{align}
+
+(23) is the friction coefficient, and (24) and (25) give the static tire loads
+
+\paragraph{Road constraints}
+We assume a uniform width \( r_w\) of the road and therefore the y state has to be constrained by 
+\begin{align}
+    r_w + B/2 \leq y(t) \leq r_w - B/2
+\end{align}
+where B is the width of the car.
+
+\paragraph{Initial conditions}
+\begin{align}
+    (x(0), y(0), v(0), \beta(0), \psi(0), \omega_z(0), \delta(0)) = 
+    (0, free, 0, 0, 0, 0, 0)
+\end{align}
+
+\paragraph{Final conditions}
+
+The time taken to complete the course is given by \(t_f\) which is a free parameter
+
+\begin{align}
+    x(t_f) = 140, \psi(tf) = 0
+\end{align}
+
+\paragraph{Loss function}
+
+The constrained optimisation problem aims to minimise the time taken to complete the course and the total steering effort
+
+Minimise
+\begin{equation}
+    t_f + \int_0^{t_f} w_\delta(t)^2 dt
+\end{equation}
+
+with constraints
+\begin{align}
+    w_\delta(t) \in [-0.5, 0.5], F_B(t) \in [0,150000], \psi \in [0,1]
+\end{align}
+
+
+\section{Converting to a finite-dimensional optimization problem}
+
+\subsection{Define state, control and constraints}
+
+Define functions for state z, control u, and functions f, g, \(\phi\), \(s\) for the dynamics, final conditions, state constraints, 
+
+\begin{align*}
+    & z: t \xrightarrow{} \mathbb{R}^7,  z(t) = (x,y,v,\beta, \psi, \omega_z, \delta)^T(t)\\
+    & u: t \xrightarrow{} \mathbb{R}^3, u(t) = (w_\delta, F_B, \phi)^T(t)\\
+\end{align*}
+
+dynamics of z is described by, \(f: \mathbb{R} \times \mathbb{R}^7 \times \mathbb{R}^3\)
+\begin{align}
+    \dot{z}(t) &= f(t,z(t),u(t))\\ & := \begin{bmatrix}
+                            v cos(\psi - \beta) \\
+                             v sin(\psi - \beta) \\
+                             \dfrac{1}{m} \bigg[ (F_{lr} - F_{Ax})cos\beta - (F_{sr} - F_{Ay})sin\beta + F_{lf}cos(\delta + \beta) - F_{sf}sin(\delta + \beta)\\
+    \bigg] \\
+    \omega_z - \dfrac{1}{mv}\bigg[ (F_{lr} - F_{Ax})sin\beta + (F_{sr} - F_{Ay})cos\beta + F_{lf}sin(\delta + \beta) + F_{sf}cos(\delta + \beta)
+    \bigg] \\
+                            \omega_z \\
+                            \dfrac{1}{I_{zz}}\bigg[ F_{sf}.l_f.cos\delta - F_{sr}.l_r - F_{Ay}.e_{SP} + F_{sf}.l_f.sin\delta \bigg]\\
+                              \omega_\delta
+            \end{bmatrix}
+\end{align}
+
+
+final and initial conditions,
+\begin{align}
+    \gamma(z(t_0), z(t_f)) := \big(x(t_0), x(t_f)-x_{END})^T = (0, 0)^T
+\end{align}
+
+control constraints,
+\begin{align}
+    c(t, z(t), u(t)) &:= \begin{bmatrix}
+                            w_\delta(t) - 0.5 \\
+                          -0.5 - w_\delta(t) \\
+                           -F_B(t) \\
+                           F_B(t) - 15000\\
+                           -\phi(t) \\
+                           \phi(t) - 1\\
+         \end{bmatrix} \leq 0_{\mathbb{R}^8}
+\end{align}
+
+state constraints,
+\begin{align}
+    s(t, z(t)) &:= \begin{bmatrix}
+                            y(t) - y_{up}(x(t)) \\
+                            y_{down}(x(t)) - y(t)\\
+                    \end{bmatrix} \leq 0_{\mathbb{R}^2}
+\end{align}
+
+where \(y_{up}, y_{down}\) are functions describing road boundary y-coordinates
+
+
+
+\subsection{Converting to a fixed time problem}
+
+Assuming \(t_0 = 0\), the final time \(t_f\) is free so we use the linear time transformation
+\begin{equation}
+    t(\tau) = \dfrac{\tau}{t_f},  \tau \in [0,1]
+\end{equation}
+
+and introduce the state \(t_f\) which is constant for \(\tau \in [0,1]\) and \( \dfrac{d}{d\tau}t_f(\tau) = 0 \)
+
+For state z, define 
+\begin{align*}
+\bar{z}(\tau) := z(t(\tau)) = z(\tau t_f) \\
+\bar{u}(\tau) := u(t(\tau)) = u(\tau t_f)
+\end{align*}
+Then, 
+
+\begin{align*}
+    \dfrac{d}{d\tau}\bar{z}(\tau) &= \dot{z}(t(\tau)). \dfrac{d}{d\tau}({t(\tau))}\\
+    & = f(t(\tau), z(t(\tau)). , u(t(\tau))). \dfrac{1}{t_f} \\
+    &= \dfrac{1}{t_f(\tau)}f\big(\dfrac{\tau}{t_f}, \bar{z}(\tau), \bar{u}(\tau)\big) 
+\end{align*}
+
+Now we redefine \(\bar{z}(\tau) = (\bar{z}(\tau), t_f(\tau))\) to include the new state.\\
+
+Then the optimization problem is given by,\\
+
+Minimize
+\begin{align*}
+    t_f(\tau)
+\end{align*}
+ 
+with respect to \(\bar{z}\) and \(\bar{u}\),
+subject to the ODEs,
+
+\begin{align*}
+    \dot{\bar{z}}(t) &= f\bigg(\frac{\tau}{t_f},\bar{z}(t),\bar{u}(t))\bigg)\
+\end{align*}
+
+and constraints,
+
+\begin{align*}
+    \bar{c} \bigg(\dfrac{\tau}{t_f},\bar{z}(t),\bar{u}(t)\bigg) := c(t(\tau), z(t(\tau)) , u(t(\tau))) \leq 0_{\mathbb{R}^8}\\
+    \bar{s} \bigg(\dfrac{\tau}{t_f},\bar{z}(t),\bar{u}(t)\bigg) := s(t(\tau), z(t(\tau)) , u(t(\tau))) \leq 0_{\mathbb{R}^2}\\
+    \gamma(\bar{z}_0, \bar{z}_N) = \big(\bar{x}(\tau_0), \bar{x}({\tau_N})-x_{END})^T = (0, 0)^T
+\end{align*}
+
+\subsection{Discretization}
+We define the grid with N steps,
+
+\begin{align*}
+G_N = [\tau_0 = 0, \tau_1, \tau_2, \dots, \tau_N = 1]
+\end{align*}
+
+\subsubsection{Discretization of control space}
+We discretize the control space with the coefficients \( m = (m_1, m_2, \dots, m_M)^T \) and B-splines of order 3, \( B_1, B_2, \dots, B_{N+2}\) given by
+
+\begin{align}    
+B_i^3(\tau) = 
+\begin{cases}
+      \dfrac{(\tau - T_i)^2}{ (T_{i+2}-T_i)(T_{i+1} - T_i)} & \text{if } \tau \in [T_i, T_{i+1})\\\\
+      \dfrac{(\tau - T_i)(T_{i+2}-\tau)}{(T_{i+2}-T_i)(T_{i+2} - T_{i+1})} + 
+      \dfrac{(T_{i+3}-\tau)(\tau-T_{i+1})}{(T_{i+3}-T_{i+1})(T_{i+2} - T_{i+1})} & \text{if } \tau \in [T_{i+1}, T_{i+2}) \\\\
+     \\\\
+      \dfrac{(T_{i+3} - \tau)^2}{ (T_{i+3}-T_{i+1})(T_{i+3} - T_{i+2})} & \text{if } \tau \in [T_{i+2}, T_{i+3}) \\\\
+      0, & \text{otherwise}
+\end{cases}
+\end{align}
+
+Here \( M = 3(N+3-1) = 3(N+2) \)
+
+The discretised control space is given by,
+\begin{equation}
+    U^M := \left\{ \sum_{i=1}^{N+2} m_i. B_i^3 | m_i \in \mathbb{R}^3, i =1,2, \dots, N+2 \right\}
+\end{equation}
+
+
+\subsubsection{Full discretization}
+
+Then we use Heun's method to discretize the ODE, with increment function \(\kappa\) given by
+\begin{align*}
+    \kappa(\tau, \bar{z}, m, h) = \dfrac{1}{2}(f(\tau, \bar{z}, \bar{u}_M) + f(\tau + h, \bar{z} + hf(\tau, \bar{z}, \bar{u}_M), \bar{u}_M)),\\
+    \text{where} \; \bar{u}_M(\tau) = \sum_{i=1}^M m_i. B_i^3 (\tau)
+\end{align*}
+
+
+Then the discretized optimisation problem is, 
+
+Minimize
+\begin{align*}
+    t_f(\tau_N)
+\end{align*}
+ 
+with respect to \(\bar{z}_N : G_N \xrightarrow{} \mathbb{R}^8\)  and \(\bar{u_N}: G_N \xrightarrow{} \mathbb{R}^3\),
+subject to,
+
+\begin{align*}
+    \bar{z}_j + h_j. \kappa(\tau_j,\bar{z}_j,m, h_j)) - \bar{z}_{j+1} = 0_{\mathbb{R}^8}, \; j =0,1,\dots, N-1 \
+\end{align*}
+
+and constraints,
+
+\begin{align*}
+    \bar{c}(\tau_j,\bar{z}_j,\bar{u}_M(\tau_j; m)) \leq 0_{\mathbb{R}^8}, \; j =0,1,\dots, N-1  \\
+    \bar{s} (\tau_j,\bar{z}_j) \leq 0_{\mathbb{R}^2}\; j =0,1,\dots, N-1  \\
+    \gamma(\bar{z}_0, \bar{z}_N) = \big(\bar{x}(\tau_0), \bar{x}({\tau_N})-x_{END})^T = (0, 0)^T
+\end{align*}
+
+Collecting all the variables and constraints into matrices, we get the optimization problem,\\
+
+Minimise
+
+\begin{align*}
+    J(\bar{q}) = t_f(\tau_N)
+\end{align*}
+
+with respect to \(\bar{q} = (\bar{z}_1, \bar{z}_2, \dots, \bar{z}_N, m) \in \mathbb{R}^{8(N+1)+3} \)
+
+with constraints
+
+\begin{equation}
+    G(\bar{q}) & = \begin{bmatrix}
+                    c(\tau_0, \bar{z}_0, \bar{u}_M(\tau_0; m))\\
+                    c(\tau_1, \bar{z}_1, \bar{u}_M(\tau_1; m))\\
+                    \vdots\\
+                    c(\tau_N, \bar{z}_N, \bar{u}_M(\tau_N; m))\\
+                    s(\tau_0, \bar{z}_0)\\
+                    s(\tau_1, \bar{z}_N)\\
+                    \vdots\\
+                    s(\tau_N, \bar{z}_N)
+                \end{bmatrix} \leq 0_{\mathbb{R}^{(8+2)(N+1)}}
+\end{equation}
+
+and,
+\begin{equation}
+    H(\bar{q}) & = \begin{bmatrix}
+                     \bar{z}_0 + h_0. \kappa(\tau_0,\bar{z}_0,m, h_0)) - \bar{z}_1\\
+                    \bar{z}_1 + h_1. \kappa(\tau_1,\bar{z}_1,m, h_1)) - \bar{z}_2\\
+                    \vdots\\
+                    \bar{z}_{N-1} + h_{N-1}. \kappa(\tau_{N-1},\bar{z}_{N-1},m, h_{N-1})) \bar{z}_N\\
+                    \gamma(\bar{z}_0, \bar{z}_N)
+                \end{bmatrix} = 0_{\mathbb{R}^{8(N+1) + 2}}
+\end{equation}
+
+
+\end{document}
+
